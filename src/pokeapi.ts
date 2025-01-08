@@ -1,91 +1,16 @@
-type berries =
-  | 'berry'
-  | 'berry-firmness'
-  | 'berry-flavor'
+import type { endPoints, options } from './types'
 
-type contests =
-  | 'contest-type'
-  | 'contest-effect'
-  | 'super-contest-effect'
-
-type encounters =
-  | 'encounter-method'
-  | 'encounter-condition'
-  | 'encounter-condition-value'
-
-type evolution =
-  | 'evolution-chain'
-  | 'evolution-trigger'
-
-type games =
-  | 'generation'
-  | 'pokedex'
-  | 'version'
-  | 'version-group'
-
-type items =
-  | 'item'
-  | 'item-attribute'
-  | 'item-category'
-  | 'item-fling-effect'
-  | 'item-pocket'
-
-type locations =
-  | 'location'
-  | 'location-area'
-  | 'pal-park-area'
-  | 'region'
-
-type machines = 'machine'
-
-type moves =
-  | 'move'
-  | 'move-ailment'
-  | 'move-battle-style'
-  | 'move-category'
-  | 'move-damage-class'
-  | 'move-learn-method'
-  | 'move-target'
-
-type pokemon =
-  | 'pokemon'
-  | 'ability'
-  | 'characteristic'
-  | 'egg-group'
-  | 'gender'
-  | 'growth-rate'
-  | 'nature'
-  | 'pokeathlon-stat'
-  | 'pokemon-color'
-  | 'pokemon-form'
-  | 'pokemon-habitat'
-  | 'pokemon-shape'
-  | 'pokemon-species'
-  | 'stat'
-  | 'type'
-
-type endPoints =
-  | berries
-  | contests
-  | encounters
-  | evolution
-  | games
-  | items
-  | locations
-  | machines
-  | moves
-  | pokemon
-
-type options = {
-  name?: string,
-  searchParams?: URLSearchParams
-}
-
+/**
+ * PokeAPIのURLを作成します。
+ *
+ * @param endpoint - 使用するエンドポイント（デフォルトは 'pokemon'）。
+ * @param options - リクエストのオプションパラメータ。
+ * @returns 作成されたURL。
+ */
 function createPokeUrl(
   endpoint: endPoints = 'pokemon',
   options?: options
 ) {
-  // configure options object
   if (!options) {
     options = {};
   }
@@ -108,6 +33,12 @@ function createPokeUrl(
   return new URL(url, baseUrl);
 }
 
+/**
+ * ポケモンの名前でスプライトと情報を取得します。
+ *
+ * @param name - ポケモンの名前。
+ * @returns スプライトURLとポケモンの名前、フレーバーテキスト、分類を含む配列に解決されるPromise。
+ */
 async function getPokemon(name: string) {
   const getSprite = async () => {
     let spriteUrl = 'https://demofree.sirv.com/nope-not-here.jpg';
@@ -142,7 +73,7 @@ async function getPokemon(name: string) {
     } catch (e) {
       console.error(e);
     }
-    return [pokeName, flavors, genera];
+    return [pokeName, flavors, genera] satisfies [string, string[], string];
   }
 
   const result = await Promise.all([getSprite(), getInfo()])
@@ -150,6 +81,13 @@ async function getPokemon(name: string) {
   return result
 }
 
+/**
+ * IDの範囲でポケモンを取得します。
+ *
+ * @param start - 範囲の開始ID。
+ * @param end - 範囲の終了ID。
+ * @returns ポケモンデータに解決されるPromiseの配列。
+ */
 function getPokemons(start: number, end: number) {
   return Array.from({ length: end - start + 1 })
     .map((_, i) => getPokemon(`${i + start}`))
