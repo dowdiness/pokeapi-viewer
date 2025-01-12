@@ -1,4 +1,5 @@
 import { getPokemon } from './pokeapi'
+import { Pokemon } from './types'
 
 /**
  * ポケモンの検索機能を設定します。
@@ -14,29 +15,26 @@ export function setupSearch(
   target: HTMLParagraphElement,
   image: HTMLImageElement,
 ) {
-  const setPokemon = async (name: string) => {
-    return await getPokemon(name)
-  }
-
-  const setDescription = (pokemon: [string, [string, string[], string]]) => {
+  const setDescription = (pokemon: Pokemon) => {
+    const flavor = pokemon.flavors[0] ?? '解説が見つかりませんでした'
     const description = `
-      名前: ${pokemon[1][0]}
-      分類: ${pokemon[1][2]}
-      解説: ${pokemon[1][1][0]}
+      名前: ${pokemon.name}
+      分類: ${pokemon.genus}
+      解説: ${flavor}
     `
     target.innerHTML = description
-    image.src = pokemon[0]
+    image.src = pokemon.sprite
   }
 
   button.addEventListener('click', () => {
-    setPokemon(element.value)
+    getPokemon(element.value)
       .then((pokemon) => {
         setDescription(pokemon)
       })
       .catch((e) => console.error(e))
   })
 
-  setPokemon('pikachu')
+  getPokemon('pikachu')
     .then((pokemon) => {
       setDescription(pokemon)
     })

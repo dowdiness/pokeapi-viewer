@@ -79,7 +79,7 @@ export type endPoints =
   | pokemon
 
 export type options = {
-  name?: string,
+  nameOrId?: string,
   searchParams?: URLSearchParams
 }
 
@@ -119,4 +119,11 @@ export type PokemonSpecies = {
   }[],
   genera: Genus[] & tags.MinItems<1>,
   names: Name[] & tags.MinItems<1>,
+}
+
+export type Pokemon = {
+  name: string,
+  flavors: string[],
+  genus: string,
+  sprite: string,
 }

@@ -3,7 +3,7 @@ import { setupSearch } from './searchPokemon.ts'
 
 document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   <div>
-    <h1>Pokemon API</h1>
+    <h1>Pokemon Viewer</h1>
     <div class="card">
       <input id="search">
     </div>

@@ -1,5 +1,11 @@
 import typia from 'typia'
-import type { endPoints, options, PokemonSprite, PokemonSpecies } from './types'
+import type {
+  endPoints,
+  options,
+  Pokemon,
+  PokemonSprite,
+  PokemonSpecies
+} from './types'
 
 /**
  * PokeAPIのURLを作成します。
@@ -24,8 +30,8 @@ function createPokeUrl(
   const versionPath = '/api/v2';
   let pathname = '';
   // set pathname
-  if (options.name) {
-    pathname = `${versionPath}/${endpoint}/${options.name}/`;
+  if (options.nameOrId) {
+    pathname = `${versionPath}/${endpoint}/${options.nameOrId}/`;
   } else {
     pathname = `${versionPath}/${endpoint}/`;
   }
@@ -38,14 +44,14 @@ function createPokeUrl(
 /**
  * ポケモンの名前でスプライトと情報を取得します。
  *
- * @param name - ポケモンの名前。
+ * @param nameOrId - ポケモンの名前か図鑑番号。
  * @returns スプライトURLとポケモンの名前、フレーバーテキスト、分類を含む配列に解決されるPromise。
  */
-async function getPokemon(name: string) {
+async function getPokemon(nameOrId: string): Promise<Pokemon> {
   const getSprite = async () => {
     let spriteUrl = 'https://demofree.sirv.com/nope-not-here.jpg';
     try {
-      const res = await fetch(createPokeUrl('pokemon', { name }));
+      const res = await fetch(createPokeUrl('pokemon', { nameOrId }));
       if (!res.ok) {
         console.error(`レスポンスステータス on pokemon: ${res.status}`)
         return spriteUrl
@@ -64,42 +70,39 @@ async function getPokemon(name: string) {
   }
 
   const getInfo = async () => {
-    let pokeName = '名前が見つかりませんでした';
+    let name = '名前が見つかりませんでした';
     let flavors = ['解説が見つかりませんでした'];
     let genus = '分類が見つかりませんでした';
     try {
-      const res = await fetch(createPokeUrl('pokemon-species', { name }));
+      const res = await fetch(createPokeUrl('pokemon-species', { nameOrId }));
       if (!res.ok) {
         console.error(`レスポンスステータス on pokemon: ${res.status}`);
-        return [pokeName, flavors, genus] satisfies [string, string[], string];
+        return { name, flavors, genus };
       }
       const json = await res.json();
       const validatedJson = typia.misc.validatePrune<PokemonSpecies>(json)
       if (!validatedJson.success) {
         console.error(validatedJson.errors)
-        return [pokeName, flavors, genus] satisfies [string, string[], string];
+        return { name, flavors, genus };
       }
-      const jaPokeName = validatedJson.data.names.filter((name) => name?.language?.name === 'ja')
-      for (let v of jaPokeName) {
-        pokeName = v.name
-      }
+      name = validatedJson.data.names
+        .filter((name) => name?.language?.name === 'ja')
+        [0]?.name ?? name
       flavors = validatedJson.data.flavor_text_entries
         .filter((flavor) => flavor?.language?.name === 'ja')
         .map((flavor) => flavor.flavor_text)
-      const jaGenus = validatedJson.data.genera
+      genus = validatedJson.data.genera
         .filter((genus) => genus?.language?.name === 'ja')
-      for (let v of jaGenus) {
-        genus = v.genus
-      }
+        [0]?.genus ?? genus
     } catch (e) {
       console.error(e);
     }
-    return [pokeName, flavors, genus] satisfies [string, string[], string];
+    return { name, flavors, genus };
   }
 
   const result = await Promise.all([getSprite(), getInfo()])
 
-  return result
+  return { sprite: result[0], ...result[1] }
 }
 
 /**
