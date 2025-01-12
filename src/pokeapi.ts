@@ -1,10 +1,12 @@
-import type { endPoints, options } from './types'
+import typia from 'typia'
+import type { endPoints, options, PokemonSprite, PokemonSpecies } from './types'
 
 /**
  * PokeAPIのURLを作成します。
  *
  * @param endpoint - 使用するエンドポイント（デフォルトは 'pokemon'）。
  * @param options - リクエストのオプションパラメータ。
+ * @see https://pokeapi.co/
  * @returns 作成されたURL。
  */
 function createPokeUrl(
@@ -45,9 +47,15 @@ async function getPokemon(name: string) {
     try {
       const res = await fetch(createPokeUrl('pokemon', { name }));
       if (!res.ok) {
-        throw new Error(`レスポンスステータス on pokemon: ${res.status}`);
+        console.error(`レスポンスステータス on pokemon: ${res.status}`)
+        return spriteUrl
       }
       const json = await res.json();
+      const validatedJson = typia.misc.validatePrune<PokemonSprite>(json)
+      if (!validatedJson.success) {
+        console.error(validatedJson.errors)
+        return spriteUrl
+      }
       spriteUrl = json.sprites.front_default;
     } catch (e) {
       console.error(e);
@@ -56,24 +64,37 @@ async function getPokemon(name: string) {
   }
 
   const getInfo = async () => {
-    let flavors = ['解説が見つかりませんでした'];
-    let genera = '分類が見つかりませんでした';
     let pokeName = '名前が見つかりませんでした';
+    let flavors = ['解説が見つかりませんでした'];
+    let genus = '分類が見つかりませんでした';
     try {
       const res = await fetch(createPokeUrl('pokemon-species', { name }));
       if (!res.ok) {
-        throw new Error(`レスポンスステータス on pokemon: ${res.status}`);
+        console.error(`レスポンスステータス on pokemon: ${res.status}`);
+        return [pokeName, flavors, genus] satisfies [string, string[], string];
       }
       const json = await res.json();
-      flavors = json.flavor_text_entries
-        .filter((flavor: { language: { name: string } }) => flavor?.language?.name === 'ja')
-        .map((flavor: { flavor_text: string }) => flavor.flavor_text)
-      genera = json.genera.filter((genera: { language: { name: string } }) => genera?.language?.name === 'ja')[0].genus
-      pokeName = json.names.filter((name: { language: { name: string } }) => name?.language?.name === 'ja')[0].name
+      const validatedJson = typia.misc.validatePrune<PokemonSpecies>(json)
+      if (!validatedJson.success) {
+        console.error(validatedJson.errors)
+        return [pokeName, flavors, genus] satisfies [string, string[], string];
+      }
+      const jaPokeName = validatedJson.data.names.filter((name) => name?.language?.name === 'ja')
+      for (let v of jaPokeName) {
+        pokeName = v.name
+      }
+      flavors = validatedJson.data.flavor_text_entries
+        .filter((flavor) => flavor?.language?.name === 'ja')
+        .map((flavor) => flavor.flavor_text)
+      const jaGenus = validatedJson.data.genera
+        .filter((genus) => genus?.language?.name === 'ja')
+      for (let v of jaGenus) {
+        genus = v.genus
+      }
     } catch (e) {
       console.error(e);
     }
-    return [pokeName, flavors, genera] satisfies [string, string[], string];
+    return [pokeName, flavors, genus] satisfies [string, string[], string];
   }
 
   const result = await Promise.all([getSprite(), getInfo()])

@@ -1,3 +1,5 @@
+import { tags } from "typia";
+
 type berries =
   | 'berry'
   | 'berry-firmness'
@@ -79,4 +81,42 @@ export type endPoints =
 export type options = {
   name?: string,
   searchParams?: URLSearchParams
+}
+
+type NamedAPIResource = {
+  name: string, url: string
+}
+
+type Name = {
+  name: string,
+  language: NamedAPIResource
+}
+
+export type PokemonSprite = {
+  sprites: {
+    front_default: string,
+    front_shiny: string,
+    front_female: string | null,
+    front_shiny_female: string | null,
+    back_default: string | null,
+    back_shiny: string | null,
+    back_female: string | null,
+    back_shiny_female: string | null,
+  }
+}
+
+type Genus = {
+  genus: string,
+  language: {
+    name: string, url: string
+  }
+}
+
+export type PokemonSpecies = {
+  flavor_text_entries: {
+    flavor_text: string,
+    language: NamedAPIResource
+  }[],
+  genera: Genus[] & tags.MinItems<1>,
+  names: Name[] & tags.MinItems<1>,
 }
